@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
 from models.decoder import build_decoder
@@ -30,9 +30,26 @@ def parse_args():
     parser.add_argument("--freq-threshold", type=int, default=5)
     parser.add_argument("--beam-size", type=int, default=5)
     parser.add_argument("--grad-clip", type=float, default=5.0)
+    parser.add_argument("--val-fraction", type=float, default=0.1, help="Validation split by unique image, not caption row.")
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--alpha-c", type=float, default=1.0, help="Doubly stochastic attention regularization.")
     parser.add_argument("--entropy-beta", type=float, default=0.01, help="Entropy bonus for hard attention.")
     return parser.parse_args()
+
+
+def split_indices_by_image(dataset, val_fraction=0.1, seed=42):
+    """Split Flickr8k by unique image name to avoid train/validation leakage."""
+    unique_images = sorted(set(dataset.images))
+    generator = torch.Generator().manual_seed(seed)
+    order = torch.randperm(len(unique_images), generator=generator).tolist()
+
+    val_count = max(1, int(len(unique_images) * val_fraction))
+    val_images = {unique_images[i] for i in order[:val_count]}
+    train_images = set(unique_images) - val_images
+
+    train_indices = [i for i, image_name in enumerate(dataset.images) if image_name in train_images]
+    val_indices = [i for i, image_name in enumerate(dataset.images) if image_name in val_images]
+    return train_indices, val_indices, len(train_images), len(val_images)
 
 
 def build_loaders(args):
@@ -52,10 +69,19 @@ def build_loaders(args):
     )
 
     pad_idx = dataset.vocab.stoi[dataset.vocab.pad_token]
-    train_size = int(0.9 * len(dataset))
-    val_size = len(dataset) - train_size
-    generator = torch.Generator().manual_seed(42)
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator=generator)
+    train_indices, val_indices, train_image_count, val_image_count = split_indices_by_image(
+        dataset,
+        val_fraction=args.val_fraction,
+        seed=args.seed,
+    )
+    train_dataset = Subset(dataset, train_indices)
+    val_dataset = Subset(dataset, val_indices)
+
+    print(
+        "Image-level split: "
+        f"{train_image_count} train images / {val_image_count} val images; "
+        f"{len(train_indices)} train captions / {len(val_indices)} val captions"
+    )
 
     train_loader = DataLoader(
         train_dataset,

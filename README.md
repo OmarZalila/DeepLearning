@@ -26,6 +26,8 @@ data/raw/captions.txt
 
 ## Entrainer un modele
 
+Le code fait maintenant le split par image unique. Les 5 captions d'une meme image restent ensemble dans train ou validation, ce qui evite de gonfler BLEU/METEOR.
+
 ```powershell
 .\venv\Scripts\python.exe train.py --model soft --epochs 10
 .\venv\Scripts\python.exe train.py --model hard --epochs 10
