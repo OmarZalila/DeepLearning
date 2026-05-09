@@ -24,6 +24,20 @@ data/raw/Flickr8k_Dataset/
 data/raw/captions.txt
 ```
 
+Pour Flickr30k, place les fichiers comme ceci :
+
+```text
+data/raw2/flickr30k_images/
+data/raw2/captions.txt
+```
+
+Le loader accepte les deux formats de captions :
+
+```text
+image,caption
+image_name,comment_number,comment
+```
+
 ## Entrainer un modele
 
 Le code fait maintenant le split par image unique. Les 5 captions d'une meme image restent ensemble dans train ou validation, ce qui evite de gonfler BLEU/METEOR.
@@ -33,6 +47,15 @@ Le code fait maintenant le split par image unique. Les 5 captions d'une meme ima
 .\venv\Scripts\python.exe train.py --model hard --epochs 10
 .\venv\Scripts\python.exe train.py --model nic --epochs 10
 .\venv\Scripts\python.exe train.py --model log_bilinear --epochs 10
+```
+
+Pour entrainer sur Flickr30k sans remplacer les checkpoints Flickr8k :
+
+```powershell
+.\venv\Scripts\python.exe train.py --model nic --data-root data/raw2/flickr30k_images --captions-file data/raw2/captions.txt --checkpoint-dir outputs/checkpoints_flickr30k --epochs 10
+.\venv\Scripts\python.exe train.py --model soft --data-root data/raw2/flickr30k_images --captions-file data/raw2/captions.txt --checkpoint-dir outputs/checkpoints_flickr30k --epochs 10
+.\venv\Scripts\python.exe train.py --model hard --data-root data/raw2/flickr30k_images --captions-file data/raw2/captions.txt --checkpoint-dir outputs/checkpoints_flickr30k --epochs 10
+.\venv\Scripts\python.exe train.py --model log_bilinear --data-root data/raw2/flickr30k_images --captions-file data/raw2/captions.txt --checkpoint-dir outputs/checkpoints_flickr30k --epochs 10
 ```
 
 Pour entrainer les quatre modeles :

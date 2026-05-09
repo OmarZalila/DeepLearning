@@ -54,7 +54,7 @@ class DecoderWithAttention(nn.Module):
 
     def init_hidden_state(self, encoder_out):
         mean_encoder_out = encoder_out.mean(dim=1)
-        return self.init_h(mean_encoder_out), self.init_c(mean_encoder_out)
+        return torch.tanh(self.init_h(mean_encoder_out)), torch.tanh(self.init_c(mean_encoder_out))
 
     def _attention_context(self, encoder_out, h):
         context, alpha = self.attention(encoder_out, h)
@@ -140,7 +140,7 @@ class DecoderNIC(nn.Module):
 
     def init_hidden_state(self, encoder_out):
         image_feature = encoder_out.mean(dim=1)
-        return self.init_h(image_feature), self.init_c(image_feature)
+        return torch.tanh(self.init_h(image_feature)), torch.tanh(self.init_c(image_feature))
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
         batch_size = encoder_out.size(0)
@@ -201,7 +201,7 @@ class DecoderLogBilinear(nn.Module):
 
     def init_hidden_state(self, encoder_out):
         image_feature = encoder_out.mean(dim=1)
-        return self.init_h(image_feature), self.init_c(image_feature)
+        return torch.tanh(self.init_h(image_feature)), torch.tanh(self.init_c(image_feature))
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
         batch_size = encoder_out.size(0)

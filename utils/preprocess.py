@@ -15,32 +15,36 @@ def load_captions(captions_file: str) -> pd.DataFrame:
     Supports Flickr8k style files:
     image,caption
     1000268201_693b08cb0e.jpg,A child in a pink dress...
+
+    Also supports Flickr30k CSV files:
+    image_name,comment_number,comment
+    1000092795.jpg,0,Two young guys...
     """
     if not os.path.exists(captions_file):
         raise FileNotFoundError(f"Captions file not found: {captions_file}")
 
-    rows = []
-    with open(captions_file, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+    raw_df = pd.read_csv(captions_file)
+    columns = {column.lower().strip(): column for column in raw_df.columns}
 
-    # Skip header if present
-    start_idx = 1 if lines and lines[0].lower().startswith("image") else 0
+    if {"image", "caption"}.issubset(columns):
+        image_col = columns["image"]
+        caption_col = columns["caption"]
+    elif {"image_name", "comment"}.issubset(columns):
+        image_col = columns["image_name"]
+        caption_col = columns["comment"]
+    else:
+        raise ValueError(
+            "Unsupported captions format. Expected columns 'image,caption' "
+            "or 'image_name,comment_number,comment'."
+        )
 
-    for line in lines[start_idx:]:
-        line = line.strip()
-        if not line:
-            continue
+    df = raw_df[[image_col, caption_col]].rename(
+        columns={image_col: "image", caption_col: "caption"}
+    )
+    df["image"] = df["image"].astype(str).str.strip()
+    df["caption"] = df["caption"].fillna("").astype(str).map(clean_caption)
+    df = df[(df["image"] != "") & (df["caption"] != "")].reset_index(drop=True)
 
-        parts = line.split(",", 1)
-        if len(parts) != 2:
-            continue
-
-        image_name, caption = parts
-        caption = clean_caption(caption)
-        if caption:
-            rows.append({"image": image_name.strip(), "caption": caption})
-
-    df = pd.DataFrame(rows)
     if df.empty:
         raise ValueError("No valid captions were loaded.")
     return df
