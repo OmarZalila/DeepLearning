@@ -6,9 +6,11 @@ data/raw/Flickr8k_Dataset/
 data/raw/captions.txt
 data/raw2/flickr30k_images/
 data/raw2/captions.txt
+data/coco20k/
 
 outputs/checkpoints/
 outputs/checkpoints_flickr30k/
+outputs/checkpoints_coco20k/
 *.pth
 
 .env
