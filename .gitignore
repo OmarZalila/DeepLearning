@@ -12,6 +12,7 @@ outputs/checkpoints/
 outputs/checkpoints_flickr30k/
 outputs/checkpoints_coco20k/
 *.pth
+*.zip
 
 .env
 .venv/
